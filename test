@@ -6,7 +6,7 @@ BASE_DIR="$(cd "$(dirname "$0")"; pwd)"
 
 resolve_executable_path() {
 	local relpath="$1"
-	echo "$relpath" | sed -e "s|@executable_path/|${BASE_DIR}/dist/|"
+	echo "$relpath" | sed -e "s|@executable_path/|${BASE_DIR}/dist/bin/|"
 }
 
 
