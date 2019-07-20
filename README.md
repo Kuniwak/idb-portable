@@ -1,6 +1,8 @@
 Portable package for facebook/idb
 =================================
 
+[![Build Status](https://app.bitrise.io/app/716dfe49fc91b5ca/status.svg?token=5X0n7oS5A1V-gu9I2Thh_w&branch=master)](https://app.bitrise.io/app/716dfe49fc91b5ca)
+
 This is a portable package builder for [facebook/idb](https://github.com/facebook/idb).
 
 
