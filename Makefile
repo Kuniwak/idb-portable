@@ -10,6 +10,8 @@ DIST_LIB = $(DIST)/lib
 DIST_FRAMEWORKS = $(DIST)/Frameworks
 TOOLS = tools
 DYLIB_TABLE = $(TOOLS)/dylib_conversion_table.txt
+ARCHIVES = archives
+ARCHIVE = $(ARCHIVES)/idb-portable.tar.gz
 
 HOMEBREW_PREFIX = $(shell brew --prefix)
 
@@ -167,7 +169,12 @@ test:
 
 
 clean:
-	rm -rf "$(WORKSPACE)" "$(DIST)"
+	rm -rf "$(WORKSPACE)" "$(DIST)" "$(ARCHIVES)"
+
+
+archive: all
+	mkdir -p "$(ARCHIVES)"
+	tar -C "$(DIST)" -czf "$(ARCHIVE)" .
 
 
 hint: hint-bin hint-frameworks hint-dylibs
