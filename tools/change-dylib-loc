@@ -1,0 +1,46 @@
+#!/bin/bash
+set -euo pipefail
+
+
+throw() {
+	local message="$*"
+	echo -e "$message" 1>&2
+	false
+}
+
+
+usage() {
+	echo -e "usage: change-dylib-loc <target> <table>\n" 1>&2
+	false
+}
+
+
+target="${1:-}"
+conversion_table="${2:-}"
+
+! [[ -z "$target" ]] || usage
+
+[[ -e "$target" ]] || throw "no such a target: $target"
+[[ -e "$conversion_table" ]] || throw "no such a conversion table: $conversion_table"
+
+old_id="$(otool -D "$target" | tail -1)"
+
+chmod +w "$target"
+while read line; do
+	old="$(echo "$line" | cut -d':' -f 1)"
+	new="$(echo "$line" | cut -d':' -f 2)"
+
+	if [[ -z "$old" ]] && [[ -z "$new" ]]; then
+		break
+	fi
+
+	! [[ -z "$old" ]] || throw "invalid old target path: $old"
+	! [[ -z "$new" ]] || throw "invalid new target path: $new"
+
+	if [[ "$old_id" == "$old" ]]; then
+		install_name_tool -id "$new" "$target"
+	fi
+
+	install_name_tool -change "$old" "$new" "$target"
+done < "$conversion_table"
+chmod -w "$target"

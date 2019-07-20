@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+while ! [[ -z "${1:-}" ]]; do
+	framework="$1"; shift
+
+	bin="$(echo "$framework" | sed -e 's|\([^/]*\)\.framework$|&/Versions/A/\1|')"
+	otool -L "$bin"
+done

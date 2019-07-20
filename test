@@ -1,0 +1,77 @@
+#!/bin/bash
+set -euo pipefail
+
+BASE_DIR="$(cd "$(dirname "$0")"; pwd)"
+
+
+resolve_executable_path() {
+	local relpath="$1"
+	echo "$relpath" | sed -e "s|@executable_path/|${BASE_DIR}/dist/|"
+}
+
+
+fail() {
+	local message="$*"
+	echo -e "$message"
+	false
+}
+
+
+assert_no_homebrew_paths() {
+	local bin="$1"
+	local is_failed=0
+
+	if otool -L "$bin" | grep '\(HOMEBREW_PREFIX\|/usr/local/\)' > /dev/null; then
+		echo "$bin: found homebrew path: $(otool -L "$bin" | grep '\(HOMEBREW_PREFIX\|/usr/local/\)')"
+		is_failed=1
+	fi
+
+	otool -L "$bin" | grep '@executable_path' | tail -n +2 | while read line; do
+		relpath="$(echo $line | sed -e 's|^\t*||' | cut -d' ' -f 1)"
+		if ! [[ -f "$(resolve_executable_path "$relpath")" ]]; then
+			echo "$bin: found broken link: $relpath"
+			is_failed=1
+		fi
+	done
+
+	[[ is_failed -eq 0 ]]
+}
+
+
+test_framework() {
+	local framework="$1"
+	framework_bin="$(echo "$framework" | sed -e 's|\([^/]*\)\.framework$|&/Versions/A/\1|')"
+
+	[[ -x "$framework_bin" ]] || fail "want $framework_bin, but not exists"
+	assert_no_homebrew_paths "$framework_bin"
+}
+
+
+test_dylib() {
+	local dylib="$1"
+
+	[[ -f "$dylib" ]] || fail "want $dylib, but not exists"
+	assert_no_homebrew_paths "$dylib"
+}
+
+
+(cd "$BASE_DIR"
+	# git clean -fdx
+	make
+
+	is_failed=0
+
+	for framework in $(find "./dist" -name '*.framework'); do
+		if ! test_framework "$framework"; then
+			is_failed=1
+		fi
+	done
+
+	for dylib in $(find "./dist" -name '*.dylib'); do
+		if ! test_dylib "$dylib"; then
+			is_failed=1
+		fi
+	done
+
+	exit $is_failed
+)
