@@ -1,8 +1,8 @@
 SHELL = /bin/sh
 
 WORKSPACE = tmp
-IDB_COMPANION_BOTTLE_ARCHIVE = $(WORKSPACE)/idb-companion-bottle.tar.gz
-IDB_COMPANION_BOTTLE = $(WORKSPACE)/idb-companion-bottle
+IDB = idb
+IDB_COMPANION_BUILD = $(WORKSPACE)/idb_companion
 DIST = dist
 DIST_BIN = $(DIST)/bin
 DIST_SHARED = $(DIST)/shared
@@ -19,7 +19,24 @@ HOMEBREW_PREFIX = $(shell brew --prefix)
 all: $(DIST_BIN)/idb_companion
 
 
-$(DIST_BIN)/idb_companion: $(IDB_COMPANION_BOTTLE) \
+.PHONY: clean test archive hint
+
+
+clean:
+	rm -rf "$(WORKSPACE)" "$(DIST)" "$(ARCHIVES)"
+
+
+test:
+	./test
+
+
+archive: all
+	mkdir -p "$(ARCHIVES)"
+	tar -C "$(DIST)" -czf "$(ARCHIVE)" .
+
+
+$(DIST_BIN)/idb_companion: \
+		$(IDB_COMPANION_BUILD)/bin/idb_companion \
 		$(DIST_SHARED)/idb_companion/LICENSE \
 		$(DIST_LIB)/libgrpc.dylib \
 		$(DIST_LIB)/libgrpc++.dylib \
@@ -32,7 +49,7 @@ $(DIST_BIN)/idb_companion: $(IDB_COMPANION_BOTTLE) \
 		$(DIST_FRAMEWORKS)/FBSimulatorControl.framework \
 		$(DIST_FRAMEWORKS)/XCTestBootstrap.framework
 	mkdir -p "$(DIST_BIN)"
-	cp -f "$(IDB_COMPANION_BOTTLE)/bin/idb_companion" "$@"
+	cp -f "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@" "$(DYLIB_TABLE)"
 
 
@@ -78,7 +95,7 @@ $(DIST_LIB)/libcrypto.1.0.0.dylib: $(HOMEBREW_PREFIX)/opt/openssl/lib/libcrypto.
 	$(TOOLS)/change-dylib-loc "$@" "$(DYLIB_TABLE)"
 
 
-$(DIST_FRAMEWORKS)/FBControlCore.framework: $(IDB_COMPANION_BOTTLE)/Frameworks/FBControlCore.framework \
+$(DIST_FRAMEWORKS)/FBControlCore.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBControlCore.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
 	cp -rf "$<" "$@"
@@ -86,7 +103,7 @@ $(DIST_FRAMEWORKS)/FBControlCore.framework: $(IDB_COMPANION_BOTTLE)/Frameworks/F
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
 
 
-$(DIST_FRAMEWORKS)/FBDeviceControl.framework: $(IDB_COMPANION_BOTTLE)/Frameworks/FBDeviceControl.framework \
+$(DIST_FRAMEWORKS)/FBDeviceControl.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBDeviceControl.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
 	cp -rf "$<" "$@"
@@ -94,7 +111,7 @@ $(DIST_FRAMEWORKS)/FBDeviceControl.framework: $(IDB_COMPANION_BOTTLE)/Frameworks
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
 
 
-$(DIST_FRAMEWORKS)/FBSimulatorControl.framework: $(IDB_COMPANION_BOTTLE)/Frameworks/FBSimulatorControl.framework \
+$(DIST_FRAMEWORKS)/FBSimulatorControl.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBSimulatorControl.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
 	cp -rf "$<" "$@"
@@ -102,17 +119,17 @@ $(DIST_FRAMEWORKS)/FBSimulatorControl.framework: $(IDB_COMPANION_BOTTLE)/Framewo
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
 
 
-$(DIST_FRAMEWORKS)/XCTestBootstrap.framework: $(IDB_COMPANION_BOTTLE)/Frameworks/XCTestBootstrap.framework \
+$(DIST_FRAMEWORKS)/XCTestBootstrap.framework: $(IDB_COMPANION_BUILD)/Frameworks/XCTestBootstrap.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
 	cp -rf "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@/Versions/A/XCTestBootstrap" "$(DYLIB_TABLE)"
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
-	
 
-$(DIST_SHARED)/idb_companion/LICENSE: $(IDB_COMPANION_BOTTLE)
+
+$(DIST_SHARED)/idb_companion/LICENSE:
 	mkdir -p "$(DIST_SHARED)/idb_companion"
-	cp -f "$(IDB_COMPANION_BOTTLE)/LICENSE" "$@"
+	cp -f "$(IDB)/LICENSE" "$@"
 
 
 $(DIST_SHARED)/grpc/LICENSE: $(HOMEBREW_PREFIX)/opt/grpc/LICENSE
@@ -135,14 +152,16 @@ $(DIST_SHARED)/openssl/LICENSE: $(HOMEBREW_PREFIX)/opt/openssl/LICENSE
 	cp -f "$<" "$@"
 
 
-$(IDB_COMPANION_BOTTLE): $(IDB_COMPANION_BOTTLE_ARCHIVE)
-	mkdir -p "$@"
-	tar xzf "$(IDB_COMPANION_BOTTLE_ARCHIVE)" --strip 2 -C "$@"
+$(IDB_COMPANION_BUILD)/bin/idb_companion: $(IDB_COMPANION_BUILD)
+$(IDB_COMPANION_BUILD)/Frameworks/FBControlCore.framework: $(IDB_COMPANION_BUILD)
+$(IDB_COMPANION_BUILD)/Frameworks/FBDeviceControl.framework: $(IDB_COMPANION_BUILD)
+$(IDB_COMPANION_BUILD)/Frameworks/FBSimulatorControl.framework: $(IDB_COMPANION_BUILD)
+$(IDB_COMPANION_BUILD)/Frameworks/XCTestBootstrap.framework: $(IDB_COMPANION_BUILD)
 
 
-$(IDB_COMPANION_BOTTLE_ARCHIVE):
+$(IDB_COMPANION_BUILD):
 	mkdir -p "$(WORKSPACE)"
-	curl --disable --location --fail 'https://github.com/facebook/idb/releases/download/v1.0.7/idb-companion-1.0.7.mojave.bottle.tar.gz' --output "$@"
+	$(TOOLS)/build-idb-companion "$(WORKSPACE)" "$(IDB_COMPANION_BUILD)"
 
 
 $(HOMEBREW_PREFIX)/opt/grpc/lib/libgrpc.dylib $(HOMEBREW_PREFIX)/opt/grpc/lib/libgrpc++.dylib:
@@ -161,35 +180,19 @@ $(HOMEBREW_PREFIX)/opt/openssl/lib/libssl.1.0.0.dylib $(HOMEBREW_PREFIX)/opt/ope
 	brew install openssl
 
 
-.PHONY: clean hint test
-
-
-test:
-	./test
-
-
-clean:
-	rm -rf "$(WORKSPACE)" "$(DIST)" "$(ARCHIVES)"
-
-
-archive: all
-	mkdir -p "$(ARCHIVES)"
-	tar -C "$(DIST)" -czf "$(ARCHIVE)" .
-
-
 hint: hint-bin hint-frameworks hint-dylibs
 
 
-hint-bin: $(IDB_COMPANION_BOTTLE)/bin/idb_companion
-	otool -L $? | grep compatibility | grep '\(@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq
+hint-bin: $(IDB_COMPANION_BUILD)/bin/idb_companion
+	otool -L $? | grep compatibility | grep '\(@rpath\|@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq
 
 
 hint-frameworks: \
-		$(IDB_COMPANION_BOTTLE)/Frameworks/FBControlCore.framework \
-		$(IDB_COMPANION_BOTTLE)/Frameworks/FBDeviceControl.framework \
-		$(IDB_COMPANION_BOTTLE)/Frameworks/FBSimulatorControl.framework \
-		$(IDB_COMPANION_BOTTLE)/Frameworks/XCTestBootstrap.framework
-	$(TOOLS)/show-dependencies-from-frameworks $? | grep compatibility | grep '\(@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq
+		$(IDB_COMPANION_BUILD)/Frameworks/FBControlCore.framework \
+		$(IDB_COMPANION_BUILD)/Frameworks/FBDeviceControl.framework \
+		$(IDB_COMPANION_BUILD)/Frameworks/FBSimulatorControl.framework \
+		$(IDB_COMPANION_BUILD)/Frameworks/XCTestBootstrap.framework
+	$(TOOLS)/show-dependencies-from-frameworks $? | grep compatibility | grep '\(@rpath\|@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq
 
 
 hint-dylibs: \
@@ -199,4 +202,4 @@ hint-dylibs: \
 		$(HOMEBREW_PREFIX)/opt/c-ares/lib/libcares.2.dylib \
 		$(HOMEBREW_PREFIX)/opt/openssl/lib/libssl.1.0.0.dylib \
 		$(HOMEBREW_PREFIX)/opt/openssl/lib/libcrypto.1.0.0.dylib
-	otool -L $? | grep compatibility | grep '\(@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq
+	otool -L $? | grep compatibility | grep '\(@rpath\|@@HOMEBREW_PREFIX@@\|$(HOMEBREW_PREFIX)\)' | sort | uniq

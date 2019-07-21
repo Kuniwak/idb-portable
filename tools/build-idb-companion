@@ -1,0 +1,47 @@
+#!/bin/bash
+set -euo pipefail
+
+BASE_DIR="$(cd "$(dirname "$0")/.."; pwd)"
+
+throw() {
+	local message="$*"
+	echo -e "$message" 1>&2
+	false
+}
+
+usage() {
+	echo -e 'usage: build-idb-companion <workspace> <out>' 1>&2
+	false
+}
+
+main() {
+	workspace_dir="${1:-}"
+	idb_companion_build="${2:-}"
+
+	! [[ -z "$workspace_dir" ]] || usage
+	! [[ -z "$idb_companion_build" ]] || usage
+
+	[[ -d "$workspace_dir" ]] || throw "no such a directory: $workspace_dir"
+
+	tmp_out="$(cd "$(mktemp -d "${workspace_dir}/.idb_companion.XXXXXX")"; pwd)"
+
+	(cd "${BASE_DIR}/idb"
+		echo "Revision information:"
+		git show HEAD --no-patch
+		echo
+
+		echo "Working directory information:"
+		git status --short
+		echo
+
+		echo "Run: ./idb_build.sh idb_companion build $tmp_out"
+		./idb_build.sh idb_companion build "$tmp_out"
+	)
+
+	(cd "${BASE_DIR}"
+		[[ -d "$idb_companion_build" ]] || rm -rf "$idb_companion_build"
+		mv "$tmp_out" "$idb_companion_build"
+	)
+}
+
+main "$@"

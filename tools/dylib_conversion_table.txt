@@ -5,14 +5,5 @@
 /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib:@executable_path/../lib/libcrypto.1.0.0.dylib
 /usr/local/opt/openssl/lib/libssl.1.0.0.dylib:@executable_path/../lib/libssl.1.0.0.dylib
 /usr/local/opt/protobuf/lib/libprotobuf.18.dylib:@executable_path/../lib/libprotobuf.18.dylib
-@@HOMEBREW_PREFIX@@/opt/grpc/lib/libgrpc++.dylib:@executable_path/../lib/libgrpc++.dylib
-@@HOMEBREW_PREFIX@@/opt/grpc/lib/libgrpc.dylib:@executable_path/../lib/libgrpc.dylib
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/FBControlCore.framework/Versions/A/FBControlCore:@executable_path/../Frameworks/FBControlCore.framework/Versions/A/FBControlCore
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/FBDeviceControl.framework/Versions/A/FBDeviceControl:@executable_path/../Frameworks/FBDeviceControl.framework/Versions/A/FBDeviceControl
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/FBDeviceControl.framework/Versions/A/Resources/libShimulator.dylib:@executable_path/../Frameworks/FBDeviceControl.framework/Versions/A/Resources/libShimulator.dylib
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/FBSimulatorControl.framework/Versions/A/FBSimulatorControl:@executable_path/../Frameworks/FBSimulatorControl.framework/Versions/A/FBSimulatorControl
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/FBSimulatorControl.framework/Versions/A/Resources/libShimulator.dylib:@executable_path/../Frameworks/FBSimulatorControl.framework/Versions/A/Resources/libShimulator.dylib
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/XCTestBootstrap.framework/Versions/A/Resources/libMaculator.dylib:@executable_path/../Frameworks/XCTestBootstrap.framework/Versions/A/Resources/libMaculator.dylib
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/XCTestBootstrap.framework/Versions/A/Resources/libShimulator.dylib:@executable_path/../Frameworks/XCTestBootstrap.framework/Versions/A/Resources/libShimulator.dylib
-@@HOMEBREW_PREFIX@@/opt/idb-companion/Frameworks/XCTestBootstrap.framework/Versions/A/XCTestBootstrap:@executable_path/../Frameworks/XCTestBootstrap.framework/Versions/A/XCTestBootstrap
-@@HOMEBREW_PREFIX@@/opt/protobuf/lib/libprotobuf.18.dylib:@executable_path/../lib/libprotobuf.18.dylib
+/usr/local/lib/libMaculator.dylib:@rpath/lib/libMaculator.dylib
+/usr/local/lib/libShimulator.dylib:@rpath/lib/libShimulator.dylib

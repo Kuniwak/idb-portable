@@ -56,7 +56,6 @@ test_dylib() {
 
 
 (cd "$BASE_DIR"
-	# git clean -fdx
 	make
 
 	is_failed=0
