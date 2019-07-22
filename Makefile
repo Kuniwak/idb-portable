@@ -51,6 +51,7 @@ $(DIST_BIN)/idb_companion: \
 	mkdir -p "$(DIST_BIN)"
 	cp -f "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@" "$(DYLIB_TABLE)"
+	codesign --force --sign "$$($(TOOLS)/find-codesigning-identity)" --timestamp=none "$@"
 
 
 $(DIST_LIB)/libgrpc.dylib: $(HOMEBREW_PREFIX)/opt/grpc/lib/libgrpc.dylib \
@@ -98,33 +99,42 @@ $(DIST_LIB)/libcrypto.1.0.0.dylib: $(HOMEBREW_PREFIX)/opt/openssl/lib/libcrypto.
 $(DIST_FRAMEWORKS)/FBControlCore.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBControlCore.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
-	cp -rf "$<" "$@"
+	cp -af "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@/Versions/A/FBControlCore" "$(DYLIB_TABLE)"
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
+	for dylib in $$(find "$@" -name '*.dylib'); do codesign --force --sign - --timestamp=none "$$dylib"; done
+	codesign --force --sign - --timestamp=none --deep "$@"
 
 
 $(DIST_FRAMEWORKS)/FBDeviceControl.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBDeviceControl.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
-	cp -rf "$<" "$@"
+	cp -af "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@/Versions/A/FBDeviceControl" "$(DYLIB_TABLE)"
+	codesign --force --sign - --timestamp=none "$@/Versions/A/FBDeviceControl"
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
+	for dylib in $$(find "$@" -name '*.dylib'); do codesign --force --sign - --timestamp=none "$$dylib"; done
+	codesign --force --sign - --timestamp=none --deep "$@"
 
 
 $(DIST_FRAMEWORKS)/FBSimulatorControl.framework: $(IDB_COMPANION_BUILD)/Frameworks/FBSimulatorControl.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
-	cp -rf "$<" "$@"
+	cp -af "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@/Versions/A/FBSimulatorControl" "$(DYLIB_TABLE)"
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
+	for dylib in $$(find "$@" -name '*.dylib'); do codesign --force --sign - --timestamp=none "$$dylib"; done
+	codesign --force --sign - --timestamp=none --deep "$@"
 
 
 $(DIST_FRAMEWORKS)/XCTestBootstrap.framework: $(IDB_COMPANION_BUILD)/Frameworks/XCTestBootstrap.framework \
 		$(DIST_SHARED)/idb_companion/LICENSE
 	mkdir -p "$(DIST_FRAMEWORKS)"
-	cp -rf "$<" "$@"
+	cp -af "$<" "$@"
 	$(TOOLS)/change-dylib-loc "$@/Versions/A/XCTestBootstrap" "$(DYLIB_TABLE)"
 	for dylib in $$(find "$@" -name '*.dylib'); do $(TOOLS)/change-dylib-loc "$$dylib" "$(DYLIB_TABLE)"; done
+	for dylib in $$(find "$@" -name '*.dylib'); do codesign --force --sign - --timestamp=none "$$dylib"; done
+	codesign --force --sign - --timestamp=none --deep "$@"
 
 
 $(DIST_SHARED)/idb_companion/LICENSE:
