@@ -5,6 +5,8 @@ Portable package for facebook/idb
 
 This is a portable package builder for [facebook/idb](https://github.com/facebook/idb).
 
+You can use prebuilt portable packages at the [releases](https://github.com/Kuniwak/idb-portable/releases).
+
 
 Contents
 --------
@@ -48,9 +50,16 @@ Usage
 ```console
 $ git clone git@github.com:Kuniwak/idb-portable
 $ cd idb-portable
+
 $ make
+$ # if keychain dialog about "codesign" is present, allow it.
+$ # because several binaries should be codesigned to
+$ # suppress dialogs about network permissions.
+
 $ make test
 ```
+
+`codesign` in `make` use an identity matching the environment variable `CODESIGNING_IDENTITY`. If not specified, idb-portable search available identities and use one of these.
 
 
 Verified Environments

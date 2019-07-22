@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+hint() {
+		echo 'you can check what codesigning identity is available using `$ security find-identity -v -p codesigning`.'
+		echo 'and, the identity must be a Developer ID Certificate.'
+		echo 'see https://help.apple.com/xcode/mac/current/#/dev033e997ca'
+}
+
+if [[ -n "${CODESIGNING_IDENTITY:-}" ]]; then
+	if [[ "$CODESIGNING_IDENTITY" == '-' ]]; then
+		echo 'WARNING: using adhoc identity' 1>&2
+		echo '-'
+	elif security find-identity -v -p codesigning | fgrep "\"$CODESIGNING_IDENTITY\"" >/dev/null; then
+		echo "identity verified: $CODESIGNING_IDENTITY" 1>&2
+		echo "$CODESIGNING_IDENTITY"
+	else
+		echo "no such a codesigning identity: $CODESIGNING_IDENTITY" 1>&2
+		hint 1>&2
+		false
+	fi
+else
+	if codesigning_identity="$(security find-identity -v -p codesigning | fgrep 'Developer ID' | sed -e 's/[^"]*"\([^"]*\)"/\1/' | head -1)"; then
+		echo "identity found: $codesigning_identity" 1>&2
+		echo "$codesigning_identity"
+	else
+		echo 'no Developer ID certificates are found.' 1>&2
+		hint 1>&2
+		false
+	fi
+fi

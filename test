@@ -17,60 +17,133 @@ fail() {
 }
 
 
+skip() {
+	local message="$*"
+	echo -e "$message"
+}
+
+
+assert_readable() {
+	local path="$1"
+	[[ -r "$path" ]] || throw "not readable: $path"
+}
+
+
+assert_executable() {
+	local path="$1"
+	[[ -x "$path" ]] || throw "not executable: $path"
+}
+
+
 assert_no_homebrew_paths() {
 	local bin="$1"
 	local is_failed=0
 
 	if otool -L "$bin" | grep '\(HOMEBREW_PREFIX\|/usr/local/\)' > /dev/null; then
-		echo "$bin: found homebrew path: $(otool -L "$bin" | grep '\(HOMEBREW_PREFIX\|/usr/local/\)')"
+		while read line; do
+			echo "found homebrew path: $line in $bin"
+		done < <(otool -L "$bin" | grep '\(HOMEBREW_PREFIX\|/usr/local/\)')
 		is_failed=1
 	fi
 
-	otool -L "$bin" | grep '@executable_path' | tail -n +2 | while read line; do
+	while read line; do
 		relpath="$(echo $line | sed -e 's|^\t*||' | cut -d' ' -f 1)"
 		if ! [[ -f "$(resolve_executable_path "$relpath")" ]]; then
-			echo "$bin: found broken link: $relpath"
+			echo "found broken link: $relpath in $bin"
 			is_failed=1
 		fi
-	done
+	done < <(otool -L "$bin" | grep '@executable_path' | tail -n +2)
 
-	[[ is_failed -eq 0 ]]
+	[[ $is_failed -eq 0 ]]
+}
+
+
+assert_valid_code_signature() {
+	local object="$1"
+
+	# NOTE: Suppress output if success.
+	if ! codesign --verify "$1" 2>/dev/null; then
+		local codesign_result="$(codesign --verbose=4 --verify "$1" 2>&1 || true)"
+
+		# NOTE: code not signed should be passed.
+		if !(echo "$codesign_result" | fgrep 'code object is not signed' >/dev/null); then
+			fail "invalid signature: $1\n$codesign_result"
+		fi
+	fi
+}
+
+
+assert_no_adhoc_signature() {
+	local object="$1"
+
+	if [[ "${CODESIGNING_IDENTITY:-}" == '-' ]]; then
+		skip "skipping: CODESIGNING_IDENTITY is adhoc (this feature for only CIs not exposing certificates for security reasons)"
+	elif codesign --verbose --display "$object" 2>&1 | fgrep 'Signature=adhoc' >/dev/null; then
+		fail "adhoc signature: $object"
+	fi
+}
+
+
+test_bin() {
+	local bin="$1"
+	local is_failed=0
+
+	assert_executable "$bin" || is_failed=1
+	assert_valid_code_signature "$bin" || is_failed=1
+	assert_no_adhoc_signature "$bin" || is_failed=1
+
+	[[ $is_failed -eq 0 ]]
 }
 
 
 test_framework() {
 	local framework="$1"
-	framework_bin="$(echo "$framework" | sed -e 's|\([^/]*\)\.framework$|&/Versions/A/\1|')"
+	local framework_bin="$(echo "$framework" | sed -e 's|\([^/]*\)\.framework$|&/Versions/Current/\1|')"
+	local is_failed=0
 
-	[[ -x "$framework_bin" ]] || fail "want $framework_bin, but not exists"
-	assert_no_homebrew_paths "$framework_bin"
+	assert_executable "$framework_bin" || is_failed=1
+	assert_no_homebrew_paths "$framework_bin" || is_failed=1
+	assert_valid_code_signature "$framework_bin" || is_failed=1
+
+	while read dylib; do
+		test_dylib "$dylib" || is_failed=1
+	done < <(find "$framework" -name '*.dylib')
+
+	[[ $is_failed -eq 0 ]]
 }
 
 
 test_dylib() {
 	local dylib="$1"
+	local is_failed=0
 
-	[[ -f "$dylib" ]] || fail "want $dylib, but not exists"
-	assert_no_homebrew_paths "$dylib"
+	assert_readable "$dylib" || is_failed=1
+	assert_no_homebrew_paths "$dylib" || is_failed=1
+	assert_valid_code_signature "$dylib" || is_failed=1
+
+	[[ $is_failed -eq 0 ]]
+}
+
+
+test_all() {
+	local is_failed=0
+
+	while read bin; do
+		test_bin "$bin" || is_failed=1
+	done < <(find "./dist/bin" -type f)
+
+	while read framework; do
+		test_framework "$framework" || is_failed=1
+	done < <(find "./dist/Frameworks" -name '*.framework')
+
+	while read dylib; do
+		test_dylib "$dylib" || is_failed=1
+	done < <(find "./dist/lib" -name '*.dylib')
+
+	[[ $is_failed -eq 0 ]]
 }
 
 
 (cd "$BASE_DIR"
-	make
-
-	is_failed=0
-
-	for framework in $(find "./dist" -name '*.framework'); do
-		if ! test_framework "$framework"; then
-			is_failed=1
-		fi
-	done
-
-	for dylib in $(find "./dist" -name '*.dylib'); do
-		if ! test_dylib "$dylib"; then
-			is_failed=1
-		fi
-	done
-
-	exit $is_failed
+	test_all
 )
